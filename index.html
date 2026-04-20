@@ -9,45 +9,48 @@
 <style>
 :root {
   --bg: #F5F2EB; --card: #FDFCF8; --ink: #1A1714; --ink2: #6B6560; --ink3: #ADA89F;
-  --accent: #C8440A; --border: #E2DDD5;
+  --accent: #C8440A; --border: #E2DDD5; --red: #A8200D;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #18160F; --card: #222018; --ink: #F0EBE0; --ink2: #9E9888; --ink3: #6B6558; --border: #35322A; }
+  :root { --bg: #18160F; --card: #222018; --ink: #F0EBE0; --ink2: #9E9888; --ink3: #6B6558; --border: #35322A; --red: #FF5F45; }
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospace; padding-bottom: 10rem; transition: background 0.3s, color 0.3s; }
+body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospace; padding-bottom: 10rem; transition: background 0.3s; }
 .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 1.5rem; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; }
 .app-title { font-family: 'Noto Serif SC', serif; font-size: 1.1rem; font-weight: 600; }
 .main { padding: 1.25rem; max-width: 480px; margin: 0 auto; }
 .section-label { font-size: 0.65rem; color: var(--ink3); text-transform: uppercase; margin: 1.5rem 0 0.75rem; display: block; letter-spacing: 0.1em; }
 
-.item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; position: relative; }
+.item-info-area { cursor: pointer; padding-right: 60px; } /* 点击标题区域触发编辑 */
 .item-name { font-family: 'Noto Serif SC', serif; font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
 .item-sub { font-size: 0.7rem; color: var(--ink3); margin-bottom: 8px; }
 .progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
 .progress-fill { height: 100%; background: var(--accent); transition: width 0.5s ease; }
-.item-right { float: right; display: flex; align-items: center; gap: 6px; }
+.item-right { position: absolute; right: 1rem; top: 1rem; display: flex; align-items: center; gap: 4px; }
 
 .num-input, .field-input, select { 
   border: 1px solid var(--border); border-radius: 6px; padding: 6px; 
   text-align: center; font-family: inherit; font-size: 0.9rem; 
-  background: var(--bg); color: var(--ink) !important;
+  background: var(--bg); color: var(--ink) !important; width: 100%; margin-bottom: 10px;
 }
-.num-input { width: 55px; }
+.num-input { width: 55px; outline: none; margin-bottom: 0; }
+.num-input:focus { border-color: var(--accent); }
 
-#streak-info { cursor: pointer; text-align: right; line-height: 1.2; background: transparent; padding: 4px; border-radius: 8px; }
+#streak-info { cursor: pointer; text-align: right; line-height: 1.2; }
 
-.calendar-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-top: 1rem; }
+.calendar-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; }
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
 .cal-day { font-size: 0.65rem; padding: 8px 0; position: relative; color: var(--ink2); cursor: pointer; border-radius: 6px; }
-.cal-day:active { background: var(--border); }
 .has-record::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: var(--accent); border-radius: 50%; }
 .cal-today { font-weight: bold; color: var(--accent); text-decoration: underline; }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: flex-end; z-index: 200; }
 .modal-overlay.open { display: flex; }
 .modal { background: var(--card); width: 100%; max-width: 480px; margin: 0 auto; padding: 1.5rem; border-radius: 20px 20px 0 0; }
-.btn-ok { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 600; margin-top: 10px; cursor: pointer; }
+.btn-group { display: flex; gap: 10px; margin-top: 10px; }
+.btn-ok { flex: 2; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+.btn-del { flex: 1; padding: 14px; background: transparent; color: var(--red); border: 1px solid var(--red); border-radius: 10px; font-size: 0.8rem; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -59,33 +62,32 @@ body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospa
 
 <main class="main">
   <div id="active-list"></div>
-  
-  <span class="section-label">打卡日历 (点击日期查看记录)</span>
+  <span class="section-label">打卡日历</span>
   <div class="calendar-wrap" id="calendar">
     <div style="font-size: 0.75rem; margin-bottom: 10px; text-align: center;" id="cal-month"></div>
     <div class="calendar-grid" id="cal-grid"></div>
   </div>
-
-  <div id="finished-container" style="margin-top: 2.5rem;">
-    <div id="finished-list"></div>
-  </div>
+  <div id="finished-container" style="margin-top: 2rem;"><div id="finished-list"></div></div>
 </main>
 
 <div style="position:fixed; bottom:25px; left:0; right:0; text-align:center; z-index:50;">
-  <button onclick="openModal()" style="padding:12px 40px; border-radius:30px; background:var(--accent); color:white; border:none; box-shadow:0 10px 20px rgba(200,68,10,0.3); font-weight:600; cursor:pointer;">+ 新增目标</button>
+  <button onclick="openAddModal()" style="padding:12px 40px; border-radius:30px; background:var(--accent); color:white; border:none; font-weight:600; box-shadow:0 8px 15px rgba(0,0,0,0.1);">+ 新增目标</button>
 </div>
 
-<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal()">
   <div class="modal" onclick="event.stopPropagation()">
-    <div style="font-family:'Noto Serif SC'; font-weight:600; margin-bottom:1rem;">添加新目标</div>
-    <select id="f-type" class="field-input" style="width: 100%; margin-bottom: 8px;">
+    <div id="modal-title" style="font-family:'Noto Serif SC'; font-weight:600; margin-bottom:1rem;">编辑目标</div>
+    <select id="f-type" class="field-input">
       <option value="book">📚 书籍阅读</option>
       <option value="course">🎬 网课学习</option>
     </select>
-    <input class="field-input" type="text" id="f-name" placeholder="名称" style="width: 100%;">
-    <input class="field-input" type="text" id="f-author" placeholder="作者" style="width: 100%;">
-    <input class="field-input" type="number" id="f-total" placeholder="总页数/讲数" style="width: 100%;">
-    <button class="btn-ok" onclick="confirmAdd()">确认并存入本地</button>
+    <input class="field-input" type="text" id="f-name" placeholder="名称">
+    <input class="field-input" type="text" id="f-author" placeholder="作者">
+    <input class="field-input" type="number" id="f-total" placeholder="总页数/讲数">
+    <div class="btn-group">
+      <button id="del-btn" class="btn-del" onclick="confirmDelete()">删除</button>
+      <button class="btn-ok" onclick="handleSave()">确认</button>
+    </div>
   </div>
 </div>
 
@@ -93,78 +95,11 @@ body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospa
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWlFKW2k5KvrJ6B3M39xVPb-en_PYTo7CnO_jF3tMbZpoTersaoIB9A0ITyPW0/exec';
 const KEY = 'shuyu_final_v2';
 let S = { items: [], finished: [] };
+let editingId = null; // 正在编辑的项目ID
 
 function today() { return new Date().toISOString().slice(0, 10); }
-
-function load() {
-  const r = localStorage.getItem(KEY);
-  if (r) S = JSON.parse(r);
-  render();
-}
-
+function load() { const r = localStorage.getItem(KEY); if (r) S = JSON.parse(r); render(); }
 function save() { localStorage.setItem(KEY, JSON.stringify(S)); }
-
-// 核心功能：查询某天读了什么
-function getWhatIRead(dateStr) {
-  const titles = [];
-  S.items.concat(S.finished).forEach(item => {
-    if (item.activeDays && item.activeDays.includes(dateStr)) {
-      titles.push(item.name);
-    }
-  });
-  return titles;
-}
-
-function showDayDetail(dateStr) {
-  const titles = getWhatIRead(dateStr);
-  if (titles.length > 0) {
-    alert(`📅 ${dateStr} 阅读记录：\n\n- ${titles.join('\n- ')}`);
-  }
-}
-
-function getAllActiveDates() {
-  const dates = new Set();
-  S.items.concat(S.finished).forEach(item => {
-    if (item.activeDays) item.activeDays.forEach(d => dates.add(d));
-  });
-  return dates;
-}
-
-function calculateStreak() {
-  const dates = getAllActiveDates();
-  if (dates.size === 0) return 0;
-  let streak = 0;
-  let checkDate = new Date();
-  if (!dates.has(checkDate.toISOString().slice(0, 10))) checkDate.setDate(checkDate.getDate() - 1);
-  while (dates.has(checkDate.toISOString().slice(0, 10))) {
-    streak++;
-    checkDate.setDate(checkDate.getDate() - 1);
-  }
-  return streak;
-}
-
-function showTotalDays() {
-  const total = getAllActiveDates().size;
-  alert(`📊 读书统计：\n累计总打卡：${total} 天\n愿你能在文字中找到平静。`);
-}
-
-function renderCalendar() {
-  const grid = document.getElementById('cal-grid');
-  const monthLabel = document.getElementById('cal-month');
-  const dates = getAllActiveDates();
-  const now = new Date();
-  monthLabel.textContent = `${now.getFullYear()}年 ${now.getMonth() + 1}月`;
-  grid.innerHTML = '';
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
-  for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isToday = d === now.getDate();
-    const hasRecord = dates.has(dateStr);
-    grid.innerHTML += `<div class="cal-day ${hasRecord ? 'has-record' : ''} ${isToday ? 'cal-today' : ''}" onclick="showDayDetail('${dateStr}')">${d}</div>`;
-  }
-}
 
 function render() {
   const activeList = document.getElementById('active-list');
@@ -173,108 +108,146 @@ function render() {
   const now = new Date();
   const fifteenDaysMs = 15 * 24 * 60 * 60 * 1000;
 
-  const activeItems = S.items.filter(item => {
-    if (!item.lastUpdate) return true;
-    return (now - new Date(item.lastUpdate)) < fifteenDaysMs;
-  });
-
-  const inactiveItems = S.items.filter(item => {
-    if (!item.lastUpdate) return false;
-    return (now - new Date(item.lastUpdate)) >= fifteenDaysMs;
-  });
+  const activeItems = S.items.filter(item => !item.lastUpdate || (now - new Date(item.lastUpdate)) < fifteenDaysMs);
+  const inactiveItems = S.items.filter(item => item.lastUpdate && (now - new Date(item.lastUpdate)) >= fifteenDaysMs);
 
   activeList.innerHTML = `<span class="section-label">正在进行中 (${activeItems.length})</span>`;
   activeItems.forEach(item => {
     const pct = Math.min(100, Math.round((item.current / item.total) * 100));
     activeList.innerHTML += `
       <div class="item">
+        <div class="item-info-area" onclick="openEditModal('${item.id}')">
+            <div class="item-name">${item.name}</div>
+            <div class="item-sub">${item.author || '未知'} · ${pct}%</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        </div>
         <div class="item-right">
-          <input class="num-input" type="number" value="${item.current}" onchange="updateProgress('${item.id}', this.value)">
+          <input class="num-input" type="number" value="${item.current}" onfocus="this.value=''" onblur="if(this.value==='')this.value=${item.current}" onchange="updateProgress('${item.id}', this.value)">
           <span style="font-size:0.7rem; color:var(--ink3)">/ ${item.total}</span>
         </div>
-        <div class="item-name">${item.name}</div>
-        <div class="item-sub">${item.author || '未知'} · ${pct}%</div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
       </div>`;
   });
 
   finishedList.innerHTML = '';
   if (inactiveItems.length > 0) {
-    finishedList.innerHTML += `<span class="section-label">已停滞 (>15天)</span>`;
+    finishedList.innerHTML += `<span class="section-label">已停滞</span>`;
     inactiveItems.forEach(item => {
-      const waitDays = Math.floor((now - new Date(item.lastUpdate)) / (1000*60*60*24));
-      finishedList.innerHTML += `
-        <div class="item" style="opacity: 0.5; background: var(--bg); border-style: dotted;">
-          <div class="item-right">
-            <button onclick="updateProgress('${item.id}', ${item.current})" style="font-size:0.6rem; background:none; border:1px solid var(--ink3); color:var(--ink3); padding:2px 6px; border-radius:4px;">唤醒</button>
-          </div>
-          <div class="item-name">${item.name}</div>
-          <div class="item-sub">已停滞 ${waitDays} 天 · 当前进度 ${item.current}/${item.total}</div>
-        </div>`;
+      finishedList.innerHTML += `<div class="item" style="opacity:0.5; border-style:dotted;" onclick="openEditModal('${item.id}')"><div class="item-name">${item.name}</div><div class="item-sub">进度 ${item.current}/${item.total}</div></div>`;
     });
   }
-
-  finishedList.innerHTML += `<span class="section-label">已同步至 Google Sheets</span>`;
-  S.finished.slice().reverse().forEach(item => {
-    finishedList.innerHTML += `
-      <div class="item" style="opacity: 0.5; background: var(--bg); border-style: dashed;">
-        <div class="item-name">${item.name}</div>
-        <div class="item-sub">${item.author} · 耗时 ${item.activeDays.length} 天 · ${item.finishDate}</div>
-      </div>`;
+  finishedList.innerHTML += `<span class="section-label">已同步至 Sheets</span>`;
+  S.finished.slice(-3).reverse().forEach(item => {
+    finishedList.innerHTML += `<div class="item" style="opacity:0.5; border-style:dashed;"><div class="item-name">${item.name}</div><div class="item-sub">${item.finishDate} 完成</div></div>`;
   });
 
   const s = calculateStreak();
-  streakEl.innerHTML = `<span style="font-size:0.6rem; color:var(--ink3); font-weight:500;">STREAK</span><br><span style="font-size:1rem; color:var(--accent); font-weight:600;">🔥 ${s} 天</span>`;
+  streakEl.innerHTML = `<span style="font-size:0.6rem; color:var(--ink3)">STREAK</span><br><span style="font-size:1rem; color:var(--accent); font-weight:600;">🔥 ${s} 天</span>`;
   renderCalendar();
 }
 
 function updateProgress(id, val) {
   const item = S.items.find(i => i.id === id);
-  if (!item) return;
+  if (!item || val === '') return;
   const v = parseInt(val) || 0;
   const t = today();
-  const now = new Date().toISOString();
   if (!item.activeDays) item.activeDays = [];
   if (!item.activeDays.includes(t)) item.activeDays.push(t);
   item.current = v;
-  item.lastUpdate = now;
-  if (v >= item.total && item.total > 0) {
-    item.finishDate = t;
-    S.finished.push({...item});
+  item.lastUpdate = new Date().toISOString();
+  if (v >= item.total) {
+    item.finishDate = t; S.finished.push({...item});
     S.items = S.items.filter(i => i.id !== id);
     uploadToGoogle(item);
-    alert(`🎉 恭喜完成！`);
+    alert('🎉 恭喜完成！');
   }
   save(); render();
 }
 
-async function uploadToGoogle(item) {
-  try {
-    await fetch(GOOGLE_SCRIPT_URL, { 
-      method: 'POST', mode: 'no-cors', 
-      body: JSON.stringify({
-        name: item.name, author: item.author || "未知",
-        type: item.type === 'book' ? '书籍' : '网课',
-        total: item.total, daysUsed: item.activeDays.length, finishDate: item.finishDate
-      }) 
-    });
-  } catch (e) {}
+// 弹窗逻辑
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = "新增目标";
+  document.getElementById('del-btn').style.display = "none";
+  document.getElementById('f-name').value = "";
+  document.getElementById('f-author').value = "";
+  document.getElementById('f-total').value = "";
+  document.getElementById('modal-overlay').classList.add('open');
 }
 
-function openModal() { document.getElementById('modal-overlay').classList.add('open'); }
+function openEditModal(id) {
+  const item = S.items.find(i => i.id === id);
+  if (!item) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = "编辑目标";
+  document.getElementById('del-btn').style.display = "block";
+  document.getElementById('f-name').value = item.name;
+  document.getElementById('f-author').value = item.author;
+  document.getElementById('f-total').value = item.total;
+  document.getElementById('f-type').value = item.type;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
 function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
 
-function confirmAdd() {
+function handleSave() {
   const name = document.getElementById('f-name').value;
   const author = document.getElementById('f-author').value;
   const total = parseInt(document.getElementById('f-total').value);
   if (!name || !total) return;
-  S.items.push({ 
-    id: Date.now().toString(), name, author, total, 
-    type: document.getElementById('f-type').value, 
-    current: 0, activeDays: [], lastUpdate: new Date().toISOString() 
-  });
+
+  if (editingId) {
+    const item = S.items.find(i => i.id === editingId);
+    item.name = name; item.author = author; item.total = total; item.type = document.getElementById('f-type').value;
+  } else {
+    S.items.push({ id: Date.now().toString(), name, author, total, type: document.getElementById('f-type').value, current: 0, activeDays: [], lastUpdate: new Date().toISOString() });
+  }
   save(); render(); closeModal();
+}
+
+function confirmDelete() {
+  if (confirm("确定要删除这个项目吗？所有本地进度将被清除。")) {
+    S.items = S.items.filter(i => i.id !== editingId);
+    save(); render(); closeModal();
+  }
+}
+
+// 其余功能代码保持不变...
+function calculateStreak() {
+  const dates = new Set(); S.items.concat(S.finished).forEach(item => item.activeDays?.forEach(d => dates.add(d)));
+  if (dates.size === 0) return 0;
+  let s = 0, d = new Date();
+  if (!dates.has(d.toISOString().slice(0, 10))) d.setDate(d.getDate() - 1);
+  while (dates.has(d.toISOString().slice(0, 10))) { s++; d.setDate(d.getDate() - 1); }
+  return s;
+}
+
+function showTotalDays() {
+  const dates = new Set(); S.items.concat(S.finished).forEach(item => item.activeDays?.forEach(d => dates.add(d)));
+  alert(`累计总打卡：${dates.size} 天`);
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('cal-grid'), dates = new Set();
+  S.items.concat(S.finished).forEach(item => item.activeDays?.forEach(d => dates.add(d)));
+  const now = new Date();
+  document.getElementById('cal-month').textContent = `${now.getFullYear()}年 ${now.getMonth() + 1}月`;
+  grid.innerHTML = '';
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+  for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    grid.innerHTML += `<div class="cal-day ${dates.has(dStr) ? 'has-record' : ''} ${d === now.getDate() ? 'cal-today' : ''}" onclick="showDayDetail('${dStr}')">${d}</div>`;
+  }
+}
+
+function showDayDetail(dStr) {
+  const titles = []; S.items.concat(S.finished).forEach(item => { if (item.activeDays?.includes(dStr)) titles.push(item.name); });
+  if (titles.length) alert(`📅 ${dStr} 记录：\n- ${titles.join('\n- ')}`);
+}
+
+async function uploadToGoogle(item) {
+  try { await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ name: item.name, author: item.author || "未知", type: item.type === 'book' ? '书籍' : '网课', total: item.total, daysUsed: item.activeDays.length, finishDate: item.finishDate }) }); } catch (e) {}
 }
 
 load();
