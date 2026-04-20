@@ -12,7 +12,7 @@
   --accent: #C8440A; --accent-bg: #FDF0EB; --green: #2E7D4F; --border: #E2DDD5;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospace; padding-bottom: 8rem; }
+body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospace; padding-bottom: 8rem; transition: background 0.3s, color 0.3s; }
 .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 1.5rem; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; }
 .app-title { font-family: 'Noto Serif SC', serif; font-size: 1.2rem; font-weight: 600; }
 .main { padding: 1.25rem; max-width: 480px; margin: 0 auto; }
@@ -24,18 +24,30 @@ body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospa
 .progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
 .progress-fill { height: 100%; background: var(--accent); transition: width 0.5s ease; }
 .item-right { float: right; display: flex; align-items: center; gap: 6px; }
-.num-input { width: 55px; border: 1px solid var(--border); border-radius: 6px; padding: 4px; text-align: center; font-family: inherit; font-size: 0.9rem; background: var(--bg); }
 
-/* Modal */
+/* 修复输入框文字颜色 */
+.num-input { 
+  width: 55px; border: 1px solid var(--border); border-radius: 6px; padding: 4px; 
+  text-align: center; font-family: inherit; font-size: 0.9rem; 
+  background: var(--bg); color: var(--ink); /* 关键：强制跟随主题色 */
+}
+
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: flex-end; z-index: 200; }
 .modal-overlay.open { display: flex; }
-.modal { background: var(--card); width: 100%; max-width: 480px; margin: 0 auto; padding: 1.5rem; border-radius: 20px 20px 0 0; animation: slideUp 0.3s ease; }
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-.field-input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-family: inherit; }
+.modal { background: var(--card); width: 100%; max-width: 480px; margin: 0 auto; padding: 1.5rem; border-radius: 20px 20px 0 0; }
+.field-input { 
+  width: 100%; padding: 12px; margin: 8px 0; border: 1px solid var(--border); 
+  border-radius: 8px; background: var(--bg); color: var(--ink); font-family: inherit; 
+}
 .btn-ok { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 600; margin-top: 10px; cursor: pointer; }
 
+/* 暗色模式适配增强 */
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #18160F; --card: #222018; --ink: #F0EBE0; --border: #35322A; }
+  :root { 
+    --bg: #18160F; --card: #222018; --ink: #F0EBE0; --ink2: #9E9888; --ink3: #6B6558; 
+    --border: #35322A; --accent-bg: #2E1A10; 
+  }
+  .num-input, .field-input, select { color: #F0EBE0 !important; background-color: #18160F !important; }
 }
 </style>
 </head>
@@ -43,16 +55,12 @@ body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospa
 
 <header class="header">
   <div class="app-title">书与课 · Tracker</div>
-  <div id="streak-info" style="font-size:0.7rem; color:var(--accent)">已坚持打卡...</div>
+  <div id="streak-info" style="font-size:0.7rem; color:var(--accent); font-weight: 600;"></div>
 </header>
 
 <main class="main">
-  <div id="active-container">
-    <span class="section-label">正在进行中</span>
-    <div id="active-list"></div>
-  </div>
-
-  <div id="finished-container" style="margin-top: 3rem;">
+  <div id="active-list"></div>
+  <div id="finished-container" style="margin-top: 2.5rem;">
     <span class="section-label">最近已完成</span>
     <div id="finished-list"></div>
   </div>
@@ -69,9 +77,9 @@ body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospa
       <option value="book">📚 书籍阅读</option>
       <option value="course">🎬 网课学习</option>
     </select>
-    <input class="field-input" type="text" id="f-name" placeholder="名称 (如：活着)">
-    <input class="field-input" type="text" id="f-author" placeholder="作者 (如：余华)">
-    <input class="field-input" type="number" id="f-total" placeholder="总页数 / 总节数">
+    <input class="field-input" type="text" id="f-name" placeholder="名称">
+    <input class="field-input" type="text" id="f-author" placeholder="作者">
+    <input class="field-input" type="number" id="f-total" placeholder="总数">
     <button class="btn-ok" onclick="confirmAdd()">存入本地</button>
   </div>
 </div>
@@ -91,13 +99,46 @@ function load() {
 
 function save() { localStorage.setItem(KEY, JSON.stringify(S)); }
 
+// 计算连续打卡天数逻辑
+function calculateStreak() {
+  const allDates = new Set();
+  // 收集所有书籍/网课的阅读日期
+  S.items.concat(S.finished).forEach(item => {
+    if (item.activeDays) item.activeDays.forEach(d => allDates.add(d));
+  });
+  
+  if (allDates.size === 0) return 0;
+
+  let streak = 0;
+  let curr = new Date();
+  
+  while (true) {
+    const s = curr.toISOString().slice(0, 10);
+    if (allDates.has(s)) {
+      streak++;
+      curr.setDate(curr.getDate() - 1);
+    } else {
+      // 如果今天还没打卡，允许从昨天开始算
+      if (streak === 0) {
+        curr.setDate(curr.getDate() - 1);
+        const yesterday = curr.toISOString().slice(0, 10);
+        if (allDates.has(yesterday)) {
+           // 继续循环，但不算 streak++
+        } else { break; }
+      } else { break; }
+    }
+    if (streak > 365) break; // 安全跳出
+  }
+  return streak;
+}
+
 function render() {
   const activeList = document.getElementById('active-list');
   const finishedList = document.getElementById('finished-list');
-  activeList.innerHTML = '';
+  const streakEl = document.getElementById('streak-info');
+  
+  activeList.innerHTML = '<span class="section-label">正在进行中</span>';
   finishedList.innerHTML = '';
-
-  if (S.items.length === 0) activeList.innerHTML = '<div style="color:var(--ink3); font-size:0.8rem; text-align:center; padding:2rem;">暂无进行中的项目</div>';
 
   S.items.forEach(item => {
     const pct = Math.min(100, Math.round((item.current / item.total) * 100));
@@ -116,12 +157,14 @@ function render() {
 
   S.finished.slice().reverse().forEach(item => {
     finishedList.innerHTML += `
-      <div class="item" style="opacity: 0.7; background: #F9F9F9; border-style: dashed;">
-        <div class="item-right"><span style="color:var(--green); font-size:0.7rem; font-weight:600;">✓ 已同步</span></div>
+      <div class="item" style="opacity: 0.7; background: var(--bg); border-style: dashed;">
         <div class="item-name">${item.name}</div>
-        <div class="item-sub">${item.author} · 实际用时 ${item.activeDays.length} 天 · ${item.finishDate} 完成</div>
+        <div class="item-sub">${item.author} · 耗时 ${item.activeDays.length} 天 · ${item.finishDate}</div>
       </div>`;
   });
+
+  const s = calculateStreak();
+  streakEl.textContent = s > 0 ? `已连续打卡 ${s} 天` : '今天还没开始哦';
 }
 
 function updateProgress(id, val) {
@@ -134,39 +177,24 @@ function updateProgress(id, val) {
   if (!item.activeDays.includes(t)) item.activeDays.push(t);
 
   item.current = v;
-
   if (v >= item.total && item.total > 0) {
     item.finishDate = t;
     S.finished.push({...item});
     S.items = S.items.filter(i => i.id !== id);
     uploadToGoogle(item);
-    alert(`🎉 恭喜完成《${item.name}》！\n实际阅读天数：${item.activeDays.length} 天。\n记录已同步至 Google Sheets。`);
   }
-  save();
-  render();
+  save(); render();
 }
 
 async function uploadToGoogle(item) {
   const payload = {
-    name: item.name,
-    author: item.author || "未知",
+    name: item.name, author: item.author || "未知",
     type: item.type === 'book' ? '书籍' : '网课',
-    total: item.total,
-    daysUsed: item.activeDays.length,
-    finishDate: item.finishDate
+    total: item.total, daysUsed: item.activeDays.length, finishDate: item.finishDate
   };
-
   try {
-    // 使用 fetch 发送数据
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify(payload)
-    });
-    console.log("Sync Complete");
-  } catch (e) {
-    console.error("Sync Failed", e);
-  }
+    await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+  } catch (e) {}
 }
 
 function openModal() { document.getElementById('modal-overlay').classList.add('open'); }
@@ -176,22 +204,9 @@ function confirmAdd() {
   const name = document.getElementById('f-name').value;
   const author = document.getElementById('f-author').value;
   const total = parseInt(document.getElementById('f-total').value);
-  const type = document.getElementById('f-type').value;
-
-  if (!name || !total) return alert("请填写名称和总数");
-
-  S.items.push({
-    id: Date.now().toString(),
-    name, author, total, type,
-    current: 0,
-    activeDays: []
-  });
-
+  if (!name || !total) return;
+  S.items.push({ id: Date.now().toString(), name, author, total, type: document.getElementById('f-type').value, current: 0, activeDays: [] });
   save(); render(); closeModal();
-  // 重置输入框
-  document.getElementById('f-name').value = '';
-  document.getElementById('f-author').value = '';
-  document.getElementById('f-total').value = '';
 }
 
 load();
