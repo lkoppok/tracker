@@ -36,11 +36,11 @@ body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospa
 .num-input { width: 55px; }
 
 #streak-info { cursor: pointer; text-align: right; line-height: 1.2; background: transparent; padding: 4px; border-radius: 8px; }
-#streak-info:active { opacity: 0.6; }
 
 .calendar-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-top: 1rem; }
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-.cal-day { font-size: 0.65rem; padding: 8px 0; position: relative; color: var(--ink2); }
+.cal-day { font-size: 0.65rem; padding: 8px 0; position: relative; color: var(--ink2); cursor: pointer; border-radius: 6px; }
+.cal-day:active { background: var(--border); }
 .has-record::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: var(--accent); border-radius: 50%; }
 .cal-today { font-weight: bold; color: var(--accent); text-decoration: underline; }
 
@@ -60,7 +60,7 @@ body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospa
 <main class="main">
   <div id="active-list"></div>
   
-  <span class="section-label">打卡日历</span>
+  <span class="section-label">打卡日历 (点击日期查看记录)</span>
   <div class="calendar-wrap" id="calendar">
     <div style="font-size: 0.75rem; margin-bottom: 10px; text-align: center;" id="cal-month"></div>
     <div class="calendar-grid" id="cal-grid"></div>
@@ -84,7 +84,7 @@ body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospa
     </select>
     <input class="field-input" type="text" id="f-name" placeholder="名称" style="width: 100%;">
     <input class="field-input" type="text" id="f-author" placeholder="作者" style="width: 100%;">
-    <input class="field-input" type="number" id="f-total" placeholder="总数" style="width: 100%;">
+    <input class="field-input" type="number" id="f-total" placeholder="总页数/讲数" style="width: 100%;">
     <button class="btn-ok" onclick="confirmAdd()">确认并存入本地</button>
   </div>
 </div>
@@ -103,6 +103,24 @@ function load() {
 }
 
 function save() { localStorage.setItem(KEY, JSON.stringify(S)); }
+
+// 核心功能：查询某天读了什么
+function getWhatIRead(dateStr) {
+  const titles = [];
+  S.items.concat(S.finished).forEach(item => {
+    if (item.activeDays && item.activeDays.includes(dateStr)) {
+      titles.push(item.name);
+    }
+  });
+  return titles;
+}
+
+function showDayDetail(dateStr) {
+  const titles = getWhatIRead(dateStr);
+  if (titles.length > 0) {
+    alert(`📅 ${dateStr} 阅读记录：\n\n- ${titles.join('\n- ')}`);
+  }
+}
 
 function getAllActiveDates() {
   const dates = new Set();
@@ -144,7 +162,7 @@ function renderCalendar() {
     const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday = d === now.getDate();
     const hasRecord = dates.has(dateStr);
-    grid.innerHTML += `<div class="cal-day ${hasRecord ? 'has-record' : ''} ${isToday ? 'cal-today' : ''}">${d}</div>`;
+    grid.innerHTML += `<div class="cal-day ${hasRecord ? 'has-record' : ''} ${isToday ? 'cal-today' : ''}" onclick="showDayDetail('${dateStr}')">${d}</div>`;
   }
 }
 
@@ -152,13 +170,11 @@ function render() {
   const activeList = document.getElementById('active-list');
   const finishedList = document.getElementById('finished-list');
   const streakEl = document.getElementById('streak-info');
-  
   const now = new Date();
   const fifteenDaysMs = 15 * 24 * 60 * 60 * 1000;
 
-  // 1. 分类：正在进行 vs 停滞15天
   const activeItems = S.items.filter(item => {
-    if (!item.lastUpdate) return true; // 新创建的
+    if (!item.lastUpdate) return true;
     return (now - new Date(item.lastUpdate)) < fifteenDaysMs;
   });
 
@@ -167,7 +183,6 @@ function render() {
     return (now - new Date(item.lastUpdate)) >= fifteenDaysMs;
   });
 
-  // 2. 渲染正在进行
   activeList.innerHTML = `<span class="section-label">正在进行中 (${activeItems.length})</span>`;
   activeItems.forEach(item => {
     const pct = Math.min(100, Math.round((item.current / item.total) * 100));
@@ -183,9 +198,7 @@ function render() {
       </div>`;
   });
 
-  // 3. 渲染停滞与已完成
   finishedList.innerHTML = '';
-  
   if (inactiveItems.length > 0) {
     finishedList.innerHTML += `<span class="section-label">已停滞 (>15天)</span>`;
     inactiveItems.forEach(item => {
@@ -201,7 +214,7 @@ function render() {
     });
   }
 
-  finishedList.innerHTML += `<span class="section-label">最近已同步至 Sheets</span>`;
+  finishedList.innerHTML += `<span class="section-label">已同步至 Google Sheets</span>`;
   S.finished.slice().reverse().forEach(item => {
     finishedList.innerHTML += `
       <div class="item" style="opacity: 0.5; background: var(--bg); border-style: dashed;">
@@ -221,13 +234,10 @@ function updateProgress(id, val) {
   const v = parseInt(val) || 0;
   const t = today();
   const now = new Date().toISOString();
-
   if (!item.activeDays) item.activeDays = [];
   if (!item.activeDays.includes(t)) item.activeDays.push(t);
-  
   item.current = v;
-  item.lastUpdate = now; // 记录最后一次活跃时间
-
+  item.lastUpdate = now;
   if (v >= item.total && item.total > 0) {
     item.finishDate = t;
     S.finished.push({...item});
@@ -241,8 +251,7 @@ function updateProgress(id, val) {
 async function uploadToGoogle(item) {
   try {
     await fetch(GOOGLE_SCRIPT_URL, { 
-      method: 'POST', 
-      mode: 'no-cors', 
+      method: 'POST', mode: 'no-cors', 
       body: JSON.stringify({
         name: item.name, author: item.author || "未知",
         type: item.type === 'book' ? '书籍' : '网课',
@@ -263,8 +272,7 @@ function confirmAdd() {
   S.items.push({ 
     id: Date.now().toString(), name, author, total, 
     type: document.getElementById('f-type').value, 
-    current: 0, activeDays: [], 
-    lastUpdate: new Date().toISOString() 
+    current: 0, activeDays: [], lastUpdate: new Date().toISOString() 
   });
   save(); render(); closeModal();
 }
