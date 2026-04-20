@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>读书 & 网课记录</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F2EB;
+  --card: #FDFCF8;
+  --ink: #1A1714;
+  --ink2: #6B6560;
+  --ink3: #ADA89F;
+  --accent: #C8440A;
+  --accent-bg: #FDF0EB;
+  --green: #2E7D4F;
+  --green-bg: #EAF4EE;
+  --border: #E2DDD5;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Mono', 'SF Mono', monospace;
+  min-height: 100vh;
+  padding-bottom: 6rem;
+}
+
+/* header */
+.header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 1.25rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.app-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+.app-date {
+  font-size: 0.7rem;
+  color: var(--ink3);
+  margin-top: 3px;
+  letter-spacing: 0.05em;
+}
+.streak-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--accent-bg);
+  border: 1px solid #F0C5B0;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+.streak-dots {
+  display: flex;
+  gap: 3px;
+  margin-top: 0.75rem;
+}
+.s-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+}
+.s-dot.done { background: var(--accent); }
+.s-dot.today-done { background: var(--green); }
+
+/* main */
+.main { padding: 1.25rem; max-width: 480px; margin: 0 auto; }
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1.5rem 0 0.75rem;
+}
+.section-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--ink3);
+  text-transform: uppercase;
+}
+.add-btn {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--ink2);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.add-btn:active { transform: scale(0.92); background: var(--border); }
+
+/* item card */
+.item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.625rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  transition: border-color 0.15s;
+}
+.item:focus-within { border-color: #C8440A88; }
+.item-left { flex: 1; min-width: 0; }
+.item-name {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.25rem;
+}
+.item-sub {
+  font-size: 0.68rem;
+  color: var(--ink3);
+  letter-spacing: 0.04em;
+}
+.progress-bar {
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+.item-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.num-input {
+  width: 58px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  font-size: 1.05rem;
+  font-weight: 500;
+  padding: 6px 4px;
+  -moz-appearance: textfield;
+}
+.num-input::-webkit-outer-spin-button,
+.num-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.num-input:focus { outline: none; border-color: var(--accent); background: var(--card); }
+.unit-label {
+  font-size: 0.68rem;
+  color: var(--ink3);
+}
+.del-btn {
+  background: none;
+  border: none;
+  color: var(--ink3);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 4px;
+}
+.del-btn:active { color: var(--accent); }
+
+.saved-flash {
+  font-size: 0.6rem;
+  color: var(--green);
+  opacity: 0;
+  transition: opacity 0.2s;
+  position: absolute;
+  right: 1rem;
+  bottom: 0.5rem;
+  pointer-events: none;
+}
+
+/* empty */
+.empty {
+  text-align: center;
+  padding: 2.5rem 0 1rem;
+  color: var(--ink3);
+  font-size: 0.78rem;
+  line-height: 2;
+}
+
+/* bottom add bar */
+.bottom-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  gap: 0.75rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.bottom-bar-inner {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  padding: 0.75rem 1.25rem calc(0.75rem + env(safe-area-inset-bottom));
+  z-index: 50;
+}
+.big-add-btn {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--ink2);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.big-add-btn:active { background: var(--border); }
+.big-add-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.big-add-btn.primary:active { background: #A33608; }
+
+/* modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20,16,12,0.55);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.modal {
+  background: var(--card);
+  border-radius: 18px 18px 0 0;
+  padding: 1.25rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
+  width: 100%;
+  max-width: 480px;
+  transform: translateY(20px);
+  transition: transform 0.25s cubic-bezier(0.34,1.3,0.64,1);
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-handle {
+  width: 36px; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 1.25rem;
+}
+.modal-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+.type-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 1rem;
+}
+.type-btn {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--ink2);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.type-btn.active {
+  background: var(--accent-bg);
+  border-color: #F0C5B0;
+  color: var(--accent);
+  font-weight: 500;
+}
+.field-label {
+  font-size: 0.68rem;
+  color: var(--ink3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+  margin-top: 0.875rem;
+}
+.field-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.9rem;
+  padding: 10px 12px;
+}
+.field-input:focus { outline: none; border-color: var(--accent); }
+.modal-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+.btn-cancel {
+  flex: 1; padding: 11px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink2);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.btn-ok {
+  flex: 2; padding: 11px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-ok:active { background: #A33608; }
+
+/* notify banner */
+.notify-bar {
+  background: var(--green-bg);
+  border: 1px solid #B5DCC4;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.notify-bar-text { flex: 1; font-size: 0.72rem; color: var(--green); line-height: 1.5; }
+.notify-time {
+  border: 1px solid #B5DCC4;
+  border-radius: 6px;
+  padding: 4px 7px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  background: white;
+  color: var(--green);
+}
+.notify-toggle {
+  border: 1px solid #B5DCC4;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  cursor: pointer;
+  background: white;
+  color: var(--ink2);
+}
+.notify-toggle.on { background: var(--green); border-color: var(--green); color: white; }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #18160F;
+    --card: #222018;
+    --ink: #F0EBE0;
+    --ink2: #9E9888;
+    --ink3: #6B6558;
+    --border: #35322A;
+    --accent-bg: #2E1A10;
+    --green-bg: #0F2018;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-top">
+    <div>
+      <div class="app-title">书与课</div>
+      <div class="app-date" id="today-str"></div>
+    </div>
+    <div class="streak-pill">
+      <span id="streak-num">0</span> 天连续
+    </div>
+  </div>
+  <div class="streak-dots" id="streak-dots"></div>
+</header>
+
+<main class="main">
+  <div id="books-section"></div>
+  <div id="courses-section"></div>
+  <div class="empty" id="empty-hint" style="display:none">
+    还没有内容<br>点下方按钮开始添加
+  </div>
+
+  <div class="notify-bar" id="notify-bar">
+    <div class="notify-bar-text">每日提醒<br><span id="notify-status">未开启</span></div>
+    <input type="time" class="notify-time" id="remind-time" value="22:00">
+    <button class="notify-toggle" id="notify-btn" onclick="toggleNotify()">开启</button>
+  </div>
+</main>
+
+<div class="bottom-bar-inner">
+  <div style="display:flex;gap:0.75rem;max-width:480px;margin:0 auto">
+    <button class="big-add-btn" onclick="openModal('book')">+ 书籍</button>
+    <button class="big-add-btn primary" onclick="openModal('course')">+ 网课</button>
+  </div>
+</div>
+
+<!-- modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">添加新内容</div>
+    <div class="type-toggle">
+      <button class="type-btn active" id="t-book" onclick="setModalType('book')">📚 书籍</button>
+      <button class="type-btn" id="t-course" onclick="setModalType('course')">🎬 网课</button>
+    </div>
+    <div class="field-label" id="fn-label">书名</div>
+    <input class="field-input" type="text" id="f-name" placeholder="活着">
+    <div class="field-label" id="ft-label">总页数</div>
+    <input class="field-input" type="number" id="f-total" placeholder="300" min="1" inputmode="numeric">
+    <div class="field-label">已看到（可选）</div>
+    <input class="field-input" type="number" id="f-current" placeholder="0" min="0" inputmode="numeric">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-ok" onclick="confirmAdd()">添加</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const KEY = 'shuyu_v1';
+let S = { items: [], log: {}, notifyOn: false, remindTime: '22:00' };
+let modalType = 'book';
+let notifyTimer = null;
+
+function today() { return new Date().toISOString().slice(0, 10); }
+
+function load() {
+  try { const r = localStorage.getItem(KEY); if (r) S = { ...S, ...JSON.parse(r) }; } catch(e) {}
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+
+// ---- render ----
+function render() {
+  updateHeader();
+  const books = S.items.filter(i => i.type === 'book');
+  const courses = S.items.filter(i => i.type === 'course');
+  const total = S.items.length;
+
+  document.getElementById('empty-hint').style.display = total === 0 ? 'block' : 'none';
+
+  document.getElementById('books-section').innerHTML = books.length
+    ? `<div class="section-head"><span class="section-label">📚 书籍</span></div>` + books.map(cardHTML).join('')
+    : '';
+  document.getElementById('courses-section').innerHTML = courses.length
+    ? `<div class="section-head"><span class="section-label">🎬 网课</span></div>` + courses.map(cardHTML).join('')
+    : '';
+
+  document.getElementById('notify-btn').className = 'notify-toggle' + (S.notifyOn ? ' on' : '');
+  document.getElementById('notify-btn').textContent = S.notifyOn ? '已开' : '开启';
+  document.getElementById('notify-status').textContent = S.notifyOn ? `每天 ${S.remindTime} 提醒` : '未开启';
+  document.getElementById('remind-time').value = S.remindTime;
+}
+
+function cardHTML(item) {
+  const cur = item.current || 0;
+  const total = item.total || 0;
+  const pct = total ? Math.min(100, Math.round(cur / total * 100)) : 0;
+  const unit = item.type === 'book' ? '页' : '节';
+  const sub = total ? `${cur} / ${total} ${unit} · ${pct}%` : `第 ${cur} ${unit}`;
+  return `<div class="item" id="item-${item.id}">
+    <div class="item-left">
+      <div class="item-name">${item.name}</div>
+      <div class="item-sub">${sub}</div>
+      ${total ? `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>` : ''}
+    </div>
+    <div class="item-right">
+      <input class="num-input" type="number" inputmode="numeric" min="0" max="${total || 99999}"
+        value="${cur}" onchange="updateProgress('${item.id}', this.value)" title="当前进度">
+      <span class="unit-label">${unit}</span>
+      <button class="del-btn" onclick="delItem('${item.id}')">×</button>
+    </div>
+  </div>`;
+}
+
+function updateHeader() {
+  const now = new Date();
+  document.getElementById('today-str').textContent =
+    now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+
+  // streak dots (last 7 days)
+  const dotsEl = document.getElementById('streak-dots');
+  const dots = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const k = d.toISOString().slice(0, 10);
+    const isToday = i === 0;
+    const done = S.log[k] && Object.keys(S.log[k]).length > 0;
+    dots.push(`<div class="s-dot ${done ? (isToday ? 'today-done' : 'done') : ''}"></div>`);
+  }
+  dotsEl.innerHTML = dots.join('');
+
+  // streak count
+  let streak = 0;
+  const d = new Date();
+  while (true) {
+    const k = d.toISOString().slice(0, 10);
+    if (S.log[k] && Object.keys(S.log[k]).length > 0) { streak++; d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  document.getElementById('streak-num').textContent = streak;
+}
+
+// ---- actions ----
+function updateProgress(id, val) {
+  const item = S.items.find(i => i.id === id);
+  if (!item) return;
+  const v = Math.max(0, parseInt(val) || 0);
+  item.current = v;
+  if (!S.log[today()]) S.log[today()] = {};
+  S.log[today()][id] = v;
+  save();
+  // re-render just the sub/progress without full re-render to preserve input focus
+  const card = document.getElementById('item-' + id);
+  if (card) {
+    const unit = item.type === 'book' ? '页' : '节';
+    const total = item.total || 0;
+    const pct = total ? Math.min(100, Math.round(v / total * 100)) : 0;
+    const sub = total ? `${v} / ${total} ${unit} · ${pct}%` : `第 ${v} ${unit}`;
+    card.querySelector('.item-sub').textContent = sub;
+    const fill = card.querySelector('.progress-fill');
+    if (fill) fill.style.width = pct + '%';
+  }
+  updateHeader();
+}
+
+function delItem(id) {
+  S.items = S.items.filter(i => i.id !== id);
+  save(); render();
+}
+
+// ---- modal ----
+function openModal(type) {
+  setModalType(type || 'book');
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-total').value = '';
+  document.getElementById('f-current').value = '';
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('f-name').focus(), 300);
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function setModalType(t) {
+  modalType = t;
+  document.getElementById('t-book').className = 'type-btn' + (t === 'book' ? ' active' : '');
+  document.getElementById('t-course').className = 'type-btn' + (t === 'course' ? ' active' : '');
+  document.getElementById('fn-label').textContent = t === 'book' ? '书名' : '课程名称';
+  document.getElementById('ft-label').textContent = t === 'book' ? '总页数' : '总节数';
+  document.getElementById('f-name').placeholder = t === 'book' ? '活着' : 'Python入门';
+  document.getElementById('f-total').placeholder = t === 'book' ? '300' : '50';
+}
+
+function confirmAdd() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { document.getElementById('f-name').focus(); return; }
+  const total = parseInt(document.getElementById('f-total').value) || 0;
+  const current = parseInt(document.getElementById('f-current').value) || 0;
+  S.items.push({ id: uid(), type: modalType, name, total, current });
+  save();
+  document.getElementById('modal-overlay').classList.remove('open');
+  render();
+}
+
+// ---- notify ----
+function toggleNotify() {
+  if (!('Notification' in window)) { alert('此浏览器不支持通知'); return; }
+  if (S.notifyOn) {
+    S.notifyOn = false;
+    if (notifyTimer) { clearTimeout(notifyTimer); notifyTimer = null; }
+    save(); render();
+  } else {
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') {
+        S.notifyOn = true;
+        scheduleNotify();
+        save(); render();
+      } else {
+        alert('请在浏览器设置中允许通知权限');
+      }
+    });
+  }
+}
+
+function scheduleNotify() {
+  if (notifyTimer) { clearTimeout(notifyTimer); notifyTimer = null; }
+  const [h, m] = (S.remindTime || '22:00').split(':').map(Number);
+  const now = new Date();
+  const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
+  if (target <= now) target.setDate(target.getDate() + 1);
+  const ms = target - now;
+  notifyTimer = setTimeout(() => {
+    new Notification('📖 打卡时间到', {
+      body: '今天看到哪里了？记录一下吧',
+      icon: ''
+    });
+    scheduleNotify();
+  }, ms);
+}
+
+document.getElementById('remind-time').addEventListener('change', function() {
+  S.remindTime = this.value;
+  save();
+  if (S.notifyOn) scheduleNotify();
+  document.getElementById('notify-status').textContent = S.notifyOn ? `每天 ${S.remindTime} 提醒` : '未开启';
+});
+
+// ---- init ----
+load();
+render();
+if (S.notifyOn && 'Notification' in window && Notification.permission === 'granted') scheduleNotify();
+</script>
+</body>
+</html>
