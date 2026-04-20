@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>书与课 · Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
@@ -11,13 +11,17 @@
   --bg: #F5F2EB; --card: #FDFCF8; --ink: #1A1714; --ink2: #6B6560; --ink3: #ADA89F;
   --accent: #C8440A; --accent-bg: #FDF0EB; --green: #2E7D4F; --border: #E2DDD5;
 }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #18160F; --card: #222018; --ink: #F0EBE0; --ink2: #9E9888; --ink3: #6B6558; --border: #35322A; }
+}
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospace; padding-bottom: 8rem; transition: background 0.3s, color 0.3s; }
+body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospace; padding-bottom: 10rem; transition: all 0.3s; }
 .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 1.5rem; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; }
-.app-title { font-family: 'Noto Serif SC', serif; font-size: 1.2rem; font-weight: 600; }
+.app-title { font-family: 'Noto Serif SC', serif; font-size: 1.1rem; font-weight: 600; }
 .main { padding: 1.25rem; max-width: 480px; margin: 0 auto; }
 .section-label { font-size: 0.65rem; color: var(--ink3); text-transform: uppercase; margin: 1.5rem 0 0.75rem; display: block; letter-spacing: 0.1em; }
 
+/* 列表项 */
 .item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 .item-name { font-family: 'Noto Serif SC', serif; font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
 .item-sub { font-size: 0.7rem; color: var(--ink3); margin-bottom: 8px; }
@@ -25,43 +29,49 @@ body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospa
 .progress-fill { height: 100%; background: var(--accent); transition: width 0.5s ease; }
 .item-right { float: right; display: flex; align-items: center; gap: 6px; }
 
-/* 修复输入框文字颜色 */
-.num-input { 
-  width: 55px; border: 1px solid var(--border); border-radius: 6px; padding: 4px; 
+/* 输入框修复 */
+.num-input, .field-input, select { 
+  border: 1px solid var(--border); border-radius: 6px; padding: 6px; 
   text-align: center; font-family: inherit; font-size: 0.9rem; 
-  background: var(--bg); color: var(--ink); /* 关键：强制跟随主题色 */
+  background: var(--bg); color: var(--ink) !important;
 }
+.num-input { width: 55px; }
 
+/* 日历样式 */
+.calendar-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-top: 1rem; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+.cal-day { font-size: 0.65rem; padding: 8px 0; position: relative; color: var(--ink2); }
+.has-record::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: var(--accent); border-radius: 50%; }
+.cal-today { font-weight: bold; color: var(--accent); text-decoration: underline; }
+
+/* Modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: flex-end; z-index: 200; }
 .modal-overlay.open { display: flex; }
 .modal { background: var(--card); width: 100%; max-width: 480px; margin: 0 auto; padding: 1.5rem; border-radius: 20px 20px 0 0; }
-.field-input { 
-  width: 100%; padding: 12px; margin: 8px 0; border: 1px solid var(--border); 
-  border-radius: 8px; background: var(--bg); color: var(--ink); font-family: inherit; 
-}
 .btn-ok { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 600; margin-top: 10px; cursor: pointer; }
 
-/* 暗色模式适配增强 */
-@media (prefers-color-scheme: dark) {
-  :root { 
-    --bg: #18160F; --card: #222018; --ink: #F0EBE0; --ink2: #9E9888; --ink3: #6B6558; 
-    --border: #35322A; --accent-bg: #2E1A10; 
-  }
-  .num-input, .field-input, select { color: #F0EBE0 !important; background-color: #18160F !important; }
-}
+#streak-info { cursor: pointer; padding: 4px 8px; border-radius: 8px; background: var(--accent-bg); transition: opacity 0.2s; }
+#streak-info:active { opacity: 0.6; }
 </style>
 </head>
 <body>
 
 <header class="header">
   <div class="app-title">书与课 · Tracker</div>
-  <div id="streak-info" style="font-size:0.7rem; color:var(--accent); font-weight: 600;"></div>
+  <div id="streak-info" onclick="showTotalDays()" title="点击查看总打卡天数"></div>
 </header>
 
 <main class="main">
   <div id="active-list"></div>
+  
+  <span class="section-label">打卡日历</span>
+  <div class="calendar-wrap" id="calendar">
+    <div style="font-size: 0.75rem; margin-bottom: 10px; text-align: center;" id="cal-month"></div>
+    <div class="calendar-grid" id="cal-grid"></div>
+  </div>
+
   <div id="finished-container" style="margin-top: 2.5rem;">
-    <span class="section-label">最近已完成</span>
+    <span class="section-label">最近已同步至 Sheets</span>
     <div id="finished-list"></div>
   </div>
 </main>
@@ -73,20 +83,20 @@ body { background: var(--bg); color: var(--ink); font-family: 'DM Mono', monospa
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <div style="font-family:'Noto Serif SC'; font-weight:600; margin-bottom:1rem;">添加新目标</div>
-    <select id="f-type" class="field-input">
+    <select id="f-type" class="field-input" style="width: 100%; margin-bottom: 8px;">
       <option value="book">📚 书籍阅读</option>
       <option value="course">🎬 网课学习</option>
     </select>
-    <input class="field-input" type="text" id="f-name" placeholder="名称">
-    <input class="field-input" type="text" id="f-author" placeholder="作者">
-    <input class="field-input" type="number" id="f-total" placeholder="总数">
+    <input class="field-input" type="text" id="f-name" placeholder="名称" style="width: 100%;">
+    <input class="field-input" type="text" id="f-author" placeholder="作者" style="width: 100%;">
+    <input class="field-input" type="number" id="f-total" placeholder="总数" style="width: 100%;">
     <button class="btn-ok" onclick="confirmAdd()">存入本地</button>
   </div>
 </div>
 
 <script>
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzwBDtUntqZ3ypJx7pdHJLYgWkMV6FDErTiw3lesMyhYZ_O11mMy0g_zuCJaIurpaY/exec';
-const KEY = 'shuyu_final_v1';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWlFKW2k5KvrJ6B3M39xVPb-en_PYTo7CnO_jF3tMbZpoTersaoIB9A0ITyPW0/exec';
+const KEY = 'shuyu_final_v2';
 let S = { items: [], finished: [] };
 
 function today() { return new Date().toISOString().slice(0, 10); }
@@ -99,37 +109,61 @@ function load() {
 
 function save() { localStorage.setItem(KEY, JSON.stringify(S)); }
 
-// 计算连续打卡天数逻辑
-function calculateStreak() {
-  const allDates = new Set();
-  // 收集所有书籍/网课的阅读日期
+// 获取所有打过卡的日期集合
+function getAllActiveDates() {
+  const dates = new Set();
   S.items.concat(S.finished).forEach(item => {
-    if (item.activeDays) item.activeDays.forEach(d => allDates.add(d));
+    if (item.activeDays) item.activeDays.forEach(d => dates.add(d));
   });
-  
-  if (allDates.size === 0) return 0;
+  return dates;
+}
 
+// 连续打卡计算（逻辑：如果中间断了，只从最近的连续段开始算）
+function calculateStreak() {
+  const dates = getAllActiveDates();
+  if (dates.size === 0) return 0;
   let streak = 0;
   let curr = new Date();
   
-  while (true) {
-    const s = curr.toISOString().slice(0, 10);
-    if (allDates.has(s)) {
-      streak++;
-      curr.setDate(curr.getDate() - 1);
-    } else {
-      // 如果今天还没打卡，允许从昨天开始算
-      if (streak === 0) {
-        curr.setDate(curr.getDate() - 1);
-        const yesterday = curr.toISOString().slice(0, 10);
-        if (allDates.has(yesterday)) {
-           // 继续循环，但不算 streak++
-        } else { break; }
-      } else { break; }
-    }
-    if (streak > 365) break; // 安全跳出
+  // 先检查今天有没有打卡，没打的话从昨天开始检查
+  let checkDate = new Date();
+  if (!dates.has(checkDate.toISOString().slice(0, 10))) {
+      checkDate.setDate(checkDate.getDate() - 1);
+  }
+
+  while (dates.has(checkDate.toISOString().slice(0, 10))) {
+    streak++;
+    checkDate.setDate(checkDate.getDate() - 1);
+    if (streak > 1000) break;
   }
   return streak;
+}
+
+function showTotalDays() {
+  const total = getAllActiveDates().size;
+  alert(`📊 统计信息：\n累计打卡总天数：${total} 天\n加油，继续保持！`);
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('cal-grid');
+  const monthLabel = document.getElementById('cal-month');
+  const dates = getAllActiveDates();
+  const now = new Date();
+  monthLabel.textContent = `${now.getFullYear()}年 ${now.getMonth() + 1}月`;
+  
+  grid.innerHTML = '';
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+
+  // 填充空白
+  for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
+  
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = d === now.getDate();
+    const hasRecord = dates.has(dateStr);
+    grid.innerHTML += `<div class="cal-day ${hasRecord ? 'has-record' : ''} ${isToday ? 'cal-today' : ''}">${d}</div>`;
+  }
 }
 
 function render() {
@@ -157,14 +191,15 @@ function render() {
 
   S.finished.slice().reverse().forEach(item => {
     finishedList.innerHTML += `
-      <div class="item" style="opacity: 0.7; background: var(--bg); border-style: dashed;">
+      <div class="item" style="opacity: 0.6; background: var(--bg); border-style: dashed;">
         <div class="item-name">${item.name}</div>
         <div class="item-sub">${item.author} · 耗时 ${item.activeDays.length} 天 · ${item.finishDate}</div>
       </div>`;
   });
 
   const s = calculateStreak();
-  streakEl.textContent = s > 0 ? `已连续打卡 ${s} 天` : '今天还没开始哦';
+  streakEl.innerHTML = `<span style="font-size:0.6rem; color:var(--ink3)">STREAK</span><br><span style="font-size:0.9rem;">🔥 ${s} 天</span>`;
+  renderCalendar();
 }
 
 function updateProgress(id, val) {
@@ -182,6 +217,7 @@ function updateProgress(id, val) {
     S.finished.push({...item});
     S.items = S.items.filter(i => i.id !== id);
     uploadToGoogle(item);
+    alert(`🎉 恭喜完成！数据已同步到 Google Sheets。`);
   }
   save(); render();
 }
@@ -194,7 +230,7 @@ async function uploadToGoogle(item) {
   };
   try {
     await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-  } catch (e) {}
+  } catch (e) { console.error("Sync failed"); }
 }
 
 function openModal() { document.getElementById('modal-overlay').classList.add('open'); }
